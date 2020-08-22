@@ -54,14 +54,20 @@ namespace ScreenshoterTest
                 Console.WriteLine($"Start {url}");
 
                 var driver = _webDriverFactory.CreateWebDriver(timeout);
-                driver.Navigate().GoToUrl($"http://{url}");
-                var ss = ((ITakesScreenshot)driver).GetScreenshot();
-                var formatted = _screenshotFormatter.FormatScreenshot(ss, width, height);
-                _screenshotSaver.Save(formatted, savePath, url);
+                var task = Task.Run(() =>
+                {
+                    driver.Navigate().GoToUrl($"http://{url}");
+                    var ss = ((ITakesScreenshot)driver).GetScreenshot();
+                    var formatted = _screenshotFormatter.FormatScreenshot(ss, width, height);
+                    _screenshotSaver.Save(formatted, savePath, url);
+                });
+
+                if (!task.Wait(TimeSpan.FromSeconds(timeout)))
+                    throw new TimeoutException("Timeout");
 
                 Console.WriteLine($"Done {url}");
             }
-            catch (WebDriverTimeoutException)
+            catch
             {
                 Console.ForegroundColor = ConsoleColor.DarkRed;
                 Console.WriteLine($"Error {url}");
