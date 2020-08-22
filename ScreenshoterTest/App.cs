@@ -46,7 +46,7 @@ namespace ScreenshoterTest
             {
                 var storage = new ScreenshotRequestsStorage(_fileOpeningService.GetUrlsFromFile(inputPath));
                 _consoleWriter.Write(storage);
-                //storage.StorageEvent += (sender, args) => { _consoleWriter.Write(storage); };
+                storage.StorageEvent += (sender, args) => { _consoleWriter.Write(storage); };
                 _screenshotTaker.TakeScreenshotsFromFile(storage, timeout, width, height, savePath, threads);
             }
         }

@@ -18,39 +18,16 @@ namespace ScreenshoterTest.Data
 
         #region Properties
 
-        private DateTime _startedAt;
-        private DateTime _finishedAt;
         private string _result;
-
         public string Url { get; set; }
-
-        public DateTime StartedAt
-        {
-            get => _startedAt;
-            set
-            {
-                _startedAt = value;
-                if (value != default) RaiseEvent();
-            }
-        }
-
-        public DateTime FinishedAt
-        {
-            get => _finishedAt;
-            set
-            {
-                _finishedAt = value;
-                if (value != default) RaiseEvent();
-            }
-        }
-
+        public TimeSpan Elapsed { get; set; }
         public string Result
         {
             get => _result;
             set
             {
                 _result = value;
-                if (value != default) RaiseEvent();
+                RaiseEvent();
             }
         }
 

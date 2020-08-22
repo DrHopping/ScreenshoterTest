@@ -48,24 +48,26 @@ namespace ScreenshoterTest
 
         private void TakeScreenshot(ScreenshotRequestModel request, int timeout, int width, int height, string savePath)
         {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             try
             {
-                request.StartedAt = DateTime.Now;
-
                 var driver = _webDriverFactory.CreateWebDriver(timeout);
                 driver.Navigate().GoToUrl($"http://{request.Url}");
                 var ss = ((ITakesScreenshot)driver).GetScreenshot();
                 var formatted = _screenshotFormatter.FormatScreenshot(ss, width, height);
                 _screenshotSaver.Save(formatted, savePath, request.Url);
 
-                request.FinishedAt = DateTime.Now;
+                stopwatch.Stop();
+                request.Elapsed = stopwatch.Elapsed;
                 request.Result = "Done";
 
             }
             catch (WebDriverTimeoutException)
             {
-                request.FinishedAt = DateTime.Now;
-                request.Result = "Done";
+                request.Elapsed = stopwatch.Elapsed;
+                request.Result = "Error";
             }
         }
     }
