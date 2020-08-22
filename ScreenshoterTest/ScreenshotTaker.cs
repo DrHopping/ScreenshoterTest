@@ -44,6 +44,7 @@ namespace ScreenshoterTest
             Parallel.ForEach(storage, new ParallelOptions() { MaxDegreeOfParallelism = threads }, (req) => TakeScreenshot(req, timeout, width, height, savePath));
             stopwatch.Stop();
             Console.WriteLine($"Elapsed: {stopwatch.Elapsed}");
+            _webDriverFactory.Dispose();
         }
 
         private void TakeScreenshot(ScreenshotRequestModel request, int timeout, int width, int height, string savePath)
