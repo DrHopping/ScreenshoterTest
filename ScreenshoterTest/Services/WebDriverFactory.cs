@@ -7,7 +7,7 @@ using OpenQA.Selenium.Chrome;
 
 namespace ScreenshoterTest.Services
 {
-    public interface IWebDriverFactory
+    public interface IWebDriverFactory : IDisposable
     {
         IWebDriver CreateWebDriver(int timeout);
     }
@@ -42,6 +42,14 @@ namespace ScreenshoterTest.Services
             }
 
             return driver;
+        }
+
+        public void Dispose()
+        {
+            foreach (var item in _drivers)
+            {
+                item.Value.Dispose();
+            }
         }
     }
 }
