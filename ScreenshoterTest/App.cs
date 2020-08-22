@@ -11,10 +11,11 @@ namespace ScreenshoterTest
         void Execute(
             [Option(LongName = "inputFile", ShortName = "f", Description = "Input file path. Default - console stream mode.")] string inputPath,
             [Option(LongName = "savePath", ShortName = "p", Description = "Save path")] string savePath = "screenshots",
-            [Option(LongName = "timeout", ShortName = "t", Description = "Page load timeout in seconds")] int timeout = 20,
+            [Option(LongName = "timeout", ShortName = "t", Description = "Page load timeout in seconds")] int timeout = 30,
             [Option(LongName = "width", ShortName = "W", Description = "Width of screenshot in px")] int width = 1920,
             [Option(LongName = "height", ShortName = "H", Description = "Height of screenshot in px")] int height = 1080,
-            [Option(LongName = "threads", ShortName = "T", Description = "Number of working threads")] int threads = 5);
+            [Option(LongName = "threads", ShortName = "T", Description = "Number of working threads")] int threads = 5,
+            [Option(LongName = "ui", ShortName = "u", Description = "Show progress table ui")] bool ui = false);
     }
     public class App : IApp
     {
@@ -33,10 +34,11 @@ namespace ScreenshoterTest
         public void Execute(
             string inputPath,
             string savePath = "/",
-            int timeout = 20,
+            int timeout = 30,
             int width = 1920,
             int height = 1080,
-            int threads = 5)
+            int threads = 5,
+            bool ui = false)
         {
             if (inputPath is null)
             {
@@ -45,8 +47,12 @@ namespace ScreenshoterTest
             else
             {
                 var storage = new ScreenshotRequestsStorage(_fileOpeningService.GetUrlsFromFile(inputPath));
-                _consoleWriter.Write(storage);
-                storage.StorageEvent += (sender, args) => { _consoleWriter.Write(storage); };
+                if (ui)
+                {
+                    _consoleWriter.Write(storage);
+                    storage.StorageEvent += (sender, args) => { _consoleWriter.Write(storage); };
+                }
+
                 _screenshotTaker.TakeScreenshotsFromFile(storage, timeout, width, height, savePath, threads);
             }
         }

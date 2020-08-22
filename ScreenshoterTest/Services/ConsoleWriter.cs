@@ -21,6 +21,7 @@ namespace ScreenshoterTest.Services
                 ConsoleTable
                     .From(storage)
                     .Write();
+                Console.SetCursorPosition(0, 0);
             }
         }
     }

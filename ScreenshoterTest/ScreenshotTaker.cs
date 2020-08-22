@@ -41,7 +41,12 @@ namespace ScreenshoterTest
         {
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
-            Parallel.ForEach(storage, new ParallelOptions() { MaxDegreeOfParallelism = threads }, (req) => TakeScreenshot(req, timeout, width, height, savePath));
+
+            Parallel.ForEach(storage, new ParallelOptions()
+            {
+                MaxDegreeOfParallelism = threads
+            }, (req) => TakeScreenshot(req, timeout, width, height, savePath));
+
             stopwatch.Stop();
             Console.WriteLine($"Elapsed: {stopwatch.Elapsed}");
             _webDriverFactory.Dispose();
@@ -54,26 +59,41 @@ namespace ScreenshoterTest
 
             try
             {
-                var driver = _webDriverFactory.CreateWebDriver(timeout);
-
-                var task = Task.Run(() =>
+                Func<Screenshot> func = () =>
                 {
+                    var driver = _webDriverFactory.CreateWebDriver(timeout);
                     driver.Navigate().GoToUrl($"http://{request.Url}");
                     var ss = ((ITakesScreenshot)driver).GetScreenshot();
+                    return ss;
+
+                };
+                var task = Task.Run(func);
+
+                if (task.Wait(TimeSpan.FromSeconds(timeout)))
+                {
+                    var ss = task.Result;
                     var formatted = _screenshotFormatter.FormatScreenshot(ss, width, height);
                     _screenshotSaver.Save(formatted, savePath, request.Url);
-                });
-
-                if (!task.Wait(TimeSpan.FromSeconds(timeout)))
+                }
+                else
+                {
                     throw new TimeoutException("Timeout");
+                }
 
                 stopwatch.Stop();
                 request.Elapsed = stopwatch.Elapsed;
                 request.Result = "Done";
 
             }
+            catch (TimeoutException)
+            {
+                stopwatch.Stop();
+                request.Elapsed = stopwatch.Elapsed;
+                request.Result = "Timeout";
+            }
             catch
             {
+                stopwatch.Stop();
                 request.Elapsed = stopwatch.Elapsed;
                 request.Result = "Error";
             }
