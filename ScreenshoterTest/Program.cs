@@ -26,6 +26,7 @@ namespace ScreenshoterTest
                         services.AddTransient<IWebDriverFactory, WebDriverFactory>();
                         services.AddTransient<IScreenshotFormatter, ScreenshotFormatter>();
                         services.AddTransient<IScreenshotSaver, ScreenshotSaver>();
+                        services.AddTransient<IConsoleWriter, ConsoleWriter>();
                         services.AddTransient<IApp, App>();
 
                     }).Build();

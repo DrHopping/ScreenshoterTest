@@ -1,4 +1,7 @@
-﻿using CommandDotNet;
+﻿using System;
+using CommandDotNet;
+using ScreenshoterTest.Data;
+using ScreenshoterTest.Services;
 
 namespace ScreenshoterTest
 {
@@ -16,10 +19,15 @@ namespace ScreenshoterTest
     public class App : IApp
     {
         private readonly IScreenshotTaker _screenshotTaker;
+        private readonly IFileOpeningService _fileOpeningService;
+        private readonly IConsoleWriter _consoleWriter;
 
-        public App(IScreenshotTaker screenshotTaker)
+
+        public App(IScreenshotTaker screenshotTaker, IFileOpeningService fileOpeningService, IConsoleWriter consoleWriter)
         {
             _screenshotTaker = screenshotTaker;
+            _fileOpeningService = fileOpeningService;
+            _consoleWriter = consoleWriter;
         }
 
         public void Execute(
@@ -31,10 +39,16 @@ namespace ScreenshoterTest
             int threads = 5)
         {
             if (inputPath is null)
+            {
                 _screenshotTaker.TakeScreenshotsFromStream();
+            }
             else
-                _screenshotTaker.TakeScreenshotsFromFile(inputPath, timeout, width, height, savePath, threads);
-
+            {
+                var storage = new ScreenshotRequestsStorage(_fileOpeningService.GetUrlsFromFile(inputPath));
+                _consoleWriter.Write(storage);
+                //storage.StorageEvent += (sender, args) => { _consoleWriter.Write(storage); };
+                _screenshotTaker.TakeScreenshotsFromFile(storage, timeout, width, height, savePath, threads);
+            }
         }
     }
 }

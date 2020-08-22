@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using OpenQA.Selenium;
+using ScreenshoterTest.Data;
 using ScreenshoterTest.Services;
 
 namespace ScreenshoterTest
@@ -10,7 +11,7 @@ namespace ScreenshoterTest
     public interface IScreenshotTaker
     {
         void TakeScreenshotsFromStream();
-        void TakeScreenshotsFromFile(string inputPath, int timeout, int width, int height, string savePath, int threads);
+        void TakeScreenshotsFromFile(ScreenshotRequestsStorage storage, int timeout, int width, int height, string savePath, int threads);
 
     }
     public class ScreenshotTaker : IScreenshotTaker
@@ -31,40 +32,40 @@ namespace ScreenshoterTest
         public void TakeScreenshotsFromStream()
         {
         }
-        public void TakeScreenshotsFromFile(string inputPath, int timeout, int width, int height, string savePath, int threads)
+        public void TakeScreenshotsFromFile(ScreenshotRequestsStorage storage, int timeout, int width, int height, string savePath, int threads)
         {
-            var urls = _fileOpeningService.GetUrlsFromFile(inputPath);
-            TakeScreenshots(urls, timeout, width, height, savePath, threads);
+            TakeScreenshots(storage, timeout, width, height, savePath, threads);
         }
 
-        private void TakeScreenshots(List<string> urls, int timeout, int width, int height, string savePath, int threads)
+        private void TakeScreenshots(ScreenshotRequestsStorage storage, int timeout, int width, int height, string savePath, int threads)
         {
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
-            Parallel.ForEach(urls, new ParallelOptions() { MaxDegreeOfParallelism = threads }, (url) => TakeScreenshot(url, timeout, width, height, savePath));
+            Parallel.ForEach(storage, new ParallelOptions() { MaxDegreeOfParallelism = threads }, (req) => TakeScreenshot(req, timeout, width, height, savePath));
             stopwatch.Stop();
             Console.WriteLine($"Elapsed: {stopwatch.Elapsed}");
         }
 
-        private void TakeScreenshot(string url, int timeout, int width, int height, string savePath)
+        private void TakeScreenshot(ScreenshotRequestModel request, int timeout, int width, int height, string savePath)
         {
             try
             {
-                Console.WriteLine($"Start {url}");
+                request.StartedAt = DateTime.Now;
 
                 var driver = _webDriverFactory.CreateWebDriver(timeout);
-                driver.Navigate().GoToUrl($"http://{url}");
+                driver.Navigate().GoToUrl($"http://{request.Url}");
                 var ss = ((ITakesScreenshot)driver).GetScreenshot();
                 var formatted = _screenshotFormatter.FormatScreenshot(ss, width, height);
-                _screenshotSaver.Save(formatted, savePath, url);
+                _screenshotSaver.Save(formatted, savePath, request.Url);
 
-                Console.WriteLine($"Done {url}");
+                request.FinishedAt = DateTime.Now;
+                request.Result = "Done";
+
             }
             catch (WebDriverTimeoutException)
             {
-                Console.ForegroundColor = ConsoleColor.DarkRed;
-                Console.WriteLine($"Error {url}");
-                Console.ForegroundColor = ConsoleColor.White;
+                request.FinishedAt = DateTime.Now;
+                request.Result = "Done";
             }
         }
     }
