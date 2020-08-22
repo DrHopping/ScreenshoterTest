@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ScreenshoterTest": {
+      "commandName": "Project",
+      "commandLineArgs": "-f file\\urls.txt -T 6"
+    }
+  }
+}
