@@ -34,7 +34,6 @@ namespace ScreenshoterTest.Services
 
             IWebDriver driver = new ChromeDriver(_service, _options);
             driver.Manage().Window.Size = new Size(1920, 1080);
-            driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(timeout);
 
             lock (_drivers)
             {
