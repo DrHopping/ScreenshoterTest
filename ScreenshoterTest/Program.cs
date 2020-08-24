@@ -1,15 +1,7 @@
-﻿using System.Collections;
-using System.Drawing;
-using System.Linq;
-using System.Net;
-using CommandDotNet;
-using CommandDotNet.Builders;
+﻿using CommandDotNet;
 using CommandDotNet.IoC.MicrosoftDependencyInjection;
-using ConsoleTables;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using OpenQA.Selenium.Remote;
-using PuppeteerSharp;
 using ScreenshoterTest.Services;
 
 namespace ScreenshoterTest
@@ -27,8 +19,8 @@ namespace ScreenshoterTest
                         services.AddTransient<IScreenshotFormatter, ScreenshotFormatter>();
                         services.AddTransient<IScreenshotSaver, ScreenshotSaver>();
                         services.AddTransient<IConsoleWriter, ConsoleWriter>();
+                        services.AddTransient<IResultSaver, ResultSaver>();
                         services.AddTransient<IApp, App>();
-
                     }).Build();
 
             return new AppRunner<IApp>().UseMicrosoftDependencyInjection(host.Services).Run(args);

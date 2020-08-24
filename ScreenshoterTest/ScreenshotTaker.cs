@@ -1,9 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 using OpenQA.Selenium;
+using OpenQA.Selenium.Support.UI;
 using ScreenshoterTest.Data;
+using ScreenshoterTest.Helpers;
 using ScreenshoterTest.Services;
 
 namespace ScreenshoterTest
@@ -11,7 +13,7 @@ namespace ScreenshoterTest
     public interface IScreenshotTaker
     {
         void TakeScreenshotsFromStream();
-        void TakeScreenshotsFromFile(ScreenshotRequestsStorage storage, int timeout, int width, int height, string savePath, int threads);
+        void TakeScreenshotsFromFile(ScreenshotRequestsStorage storage, int timeout, int width, int height, string savePath, int threads, int wait);
 
     }
     public class ScreenshotTaker : IScreenshotTaker
@@ -32,12 +34,12 @@ namespace ScreenshoterTest
         public void TakeScreenshotsFromStream()
         {
         }
-        public void TakeScreenshotsFromFile(ScreenshotRequestsStorage storage, int timeout, int width, int height, string savePath, int threads)
+        public void TakeScreenshotsFromFile(ScreenshotRequestsStorage storage, int timeout, int width, int height, string savePath, int threads, int wait)
         {
-            TakeScreenshots(storage, timeout, width, height, savePath, threads);
+            TakeScreenshots(storage, timeout, width, height, savePath, threads, wait);
         }
 
-        private void TakeScreenshots(ScreenshotRequestsStorage storage, int timeout, int width, int height, string savePath, int threads)
+        private void TakeScreenshots(ScreenshotRequestsStorage storage, int timeout, int width, int height, string savePath, int threads, int wait)
         {
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -45,14 +47,14 @@ namespace ScreenshoterTest
             Parallel.ForEach(storage, new ParallelOptions()
             {
                 MaxDegreeOfParallelism = threads
-            }, (req) => TakeScreenshot(req, timeout, width, height, savePath));
+            }, (req) => TakeScreenshot(req, timeout, width, height, savePath, wait));
 
             stopwatch.Stop();
             Console.WriteLine($"Elapsed: {stopwatch.Elapsed}");
             _webDriverFactory.Dispose();
         }
 
-        private void TakeScreenshot(ScreenshotRequestModel request, int timeout, int width, int height, string savePath)
+        private void TakeScreenshot(ScreenshotRequestModel request, int timeout, int width, int height, string savePath, int wait)
         {
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -61,17 +63,25 @@ namespace ScreenshoterTest
             {
                 Func<Screenshot> func = () =>
                 {
-                    var driver = _webDriverFactory.CreateWebDriver(timeout);
-                    driver.Navigate().GoToUrl($"http://{request.Url}");
-                    var ss = ((ITakesScreenshot)driver).GetScreenshot();
-                    return ss;
-
+                    try
+                    {
+                        var driver = _webDriverFactory.CreateWebDriver(timeout);
+                        driver.Navigate().GoToUrl($"http://{request.Url}");
+                        driver.Wait(TimeSpan.FromSeconds(wait));
+                        var ss = ((ITakesScreenshot)driver).GetScreenshot();
+                        return ss;
+                    }
+                    catch
+                    {
+                        return null;
+                    }
                 };
                 var task = Task.Run(func);
 
-                if (task.Wait(TimeSpan.FromSeconds(timeout)))
+                if (task.Wait(TimeSpan.FromSeconds(timeout + wait)))
                 {
                     var ss = task.Result;
+                    if (ss == null) throw new Exception();
                     var formatted = _screenshotFormatter.FormatScreenshot(ss, width, height);
                     _screenshotSaver.Save(formatted, savePath, request.Url);
                 }
