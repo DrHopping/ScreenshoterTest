@@ -22,7 +22,7 @@ namespace ScreenshoterTest.Services
             options.AddArgument("--headless");
             _options = options;
 
-            var service = ChromeDriverService.CreateDefaultService();
+            var service = ChromeDriverService.CreateDefaultService(Environment.CurrentDirectory);
             service.HideCommandPromptWindow = true;
             _service = service;
 
@@ -34,6 +34,7 @@ namespace ScreenshoterTest.Services
 
             IWebDriver driver = new ChromeDriver(_service, _options);
             driver.Manage().Window.Size = new Size(1920, 1080);
+
 
             lock (_drivers)
             {
@@ -47,6 +48,7 @@ namespace ScreenshoterTest.Services
         {
             foreach (var item in _drivers)
             {
+                item.Value.Quit();
                 item.Value.Dispose();
             }
         }
